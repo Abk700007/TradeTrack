@@ -3,7 +3,6 @@
 ![Node.js](https://img.shields.io/badge/Node.js-22.16.0-green)
 ![React](https://img.shields.io/badge/React-19.1.1-blue)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
-![Live Demo](https://tradetrack-h9ny.onrender.com)
 
 **Master Stock Trading — Risk-Free**
 
