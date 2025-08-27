@@ -19,7 +19,10 @@ function Navbar({ onSearch }) {
 
   return (
     <nav className="flex justify-between items-center bg-blue-900 text-white p-4 shadow-md">
-      <h1 className="text-xl font-bold">TradeTrack</h1>
+      <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-red-400">
+  TradeTrack
+</h1>
+
       <form onSubmit={handleSearch} className="flex items-center space-x-4">
         <input
           type="text"

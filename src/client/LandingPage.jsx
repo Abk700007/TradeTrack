@@ -25,27 +25,38 @@ export default function LandingPage({ onLaunch }) {
     <div className="bg-gradient-to-b from-[#111827] via-[#1f2937] to-black text-white font-sans relative">
       {/* Hero Section */}
       <section className="relative z-10 min-h-screen flex flex-col justify-center items-center px-6 text-center overflow-hidden">
+        {/* App Name */}
         <motion.h1
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1 }}
+          className="text-7xl md:text-8xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500"
+        >
+          TradeTrack
+        </motion.h1>
+
+        {/* Main Heading */}
+        <motion.h2
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-          className="text-5xl md:text-6xl font-bold mb-6"
+          transition={{ delay: 0.5, duration: 1 }}
+          className="text-4xl md:text-5xl font-bold mb-6"
         >
           Master Stock Trading — Risk-Free
-        </motion.h1>
+        </motion.h2>
+
+        {/* Subheading */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 1 }}
+          transition={{ delay: 1, duration: 1 }}
           className="text-lg max-w-xl mb-8"
         >
           Learn to invest smartly with live market prices. Practice, track, and grow — all virtually.
         </motion.p>
+
         <motion.button
-          onClick={() => {
-            console.log("Launch clicked");
-            onLaunch?.(); // safe call
-          }}
+          onClick={() => onLaunch?.()}
           whileHover={{ scale: 1.05 }}
           className="z-20 bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl text-white font-semibold transition"
         >
@@ -54,26 +65,23 @@ export default function LandingPage({ onLaunch }) {
 
         {/* SVG Wave Background */}
         <svg
-  className="absolute bottom-0 w-full z-0 pointer-events-none"
-  viewBox="0 0 1440 320"
-  xmlns="http://www.w3.org/2000/svg"
->
-  <path fill="#8b5cf6"  fillOpacity="0.5">
-    <animate
-      attributeName="d"
-      dur="10s"
-      repeatCount="indefinite"
-      values="
-        M0,160L60,149.3C120,139,240,117,360,106.7C480,96,600,96,720,106.7C840,117,960,139,1080,138.7C1200,139,1320,117,1380,106.7L1440,96L1440,320L0,320Z;
-        
-        M0,180L60,160C120,140,240,100,360,90C480,80,600,110,720,120C840,130,960,100,1080,120C1200,140,1320,170,1380,160L1440,150L1440,320L0,320Z;
-        
-        M0,160L60,149.3C120,139,240,117,360,106.7C480,96,600,96,720,106.7C840,117,960,139,1080,138.7C1200,139,1320,117,1380,106.7L1440,96L1440,320L0,320Z
-      "
-    />
-  </path>
-</svg>
-
+          className="absolute bottom-0 w-full z-0 pointer-events-none"
+          viewBox="0 0 1440 320"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path fill="#8b5cf6" fillOpacity="0.5">
+            <animate
+              attributeName="d"
+              dur="10s"
+              repeatCount="indefinite"
+              values="
+                M0,160L60,149.3C120,139,240,117,360,106.7C480,96,600,96,720,106.7C840,117,960,139,1080,138.7C1200,139,1320,117,1380,106.7L1440,96L1440,320L0,320Z;
+                M0,180L60,160C120,140,240,100,360,90C480,80,600,110,720,120C840,130,960,100,1080,120C1200,140,1320,170,1380,160L1440,150L1440,320L0,320Z;
+                M0,160L60,149.3C120,139,240,117,360,106.7C480,96,600,96,720,106.7C840,117,960,139,1080,138.7C1200,139,1320,117,1380,106.7L1440,96L1440,320L0,320Z
+              "
+            />
+          </path>
+        </svg>
       </section>
 
       {/* Features Section */}
