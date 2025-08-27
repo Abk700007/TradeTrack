@@ -1,7 +1,6 @@
 export const fetchLTP = async (symbol) => {
   try {
-    // ✅ No hardcoded localhost
-    const res = await fetch(`/api/stock/${symbol}`);
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/stock/${symbol}`);
     if (!res.ok) return null;
     const data = await res.json();
     return data;
