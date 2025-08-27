@@ -34,7 +34,7 @@ TradeTrack is a virtual stock trading platform that allows users to practice inv
 
 ## 🚀 Live Demo
 
-Check out the deployed app: [TradeTrack Live](https://your-render-link.onrender.com) <!-- Replace with actual link -->
+Check out the deployed app: [TradeTrack Live](https://tradetrack-h9ny.onrender.com) <!-- Replace with actual link -->
 
 
 
