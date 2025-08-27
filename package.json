@@ -4,11 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"pnpm run dev:client\" \"pnpm run dev:server\"",    "dev:client": "vite",
+    "dev": "concurrently \"pnpm run dev:client\" \"pnpm run dev:server\"",
+    "dev:client": "vite",
     "dev:server": "pnpm --dir server run dev",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "build": "pnpm run build:client",
+    "build:client": "vite build",
+    "start": "node server/index.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.12",
@@ -16,7 +17,10 @@
     "lucide-react": "^0.539.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "tailwindcss": "^4.1.12"
+    "tailwindcss": "^4.1.12",
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "yahoo-finance2": "^2.12.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",

@@ -1,6 +1,7 @@
 export const fetchLTP = async (symbol) => {
   try {
-    const res = await fetch(`http://localhost:5000/stock/${symbol}`);
+    // ✅ No hardcoded localhost
+    const res = await fetch(`/api/stock/${symbol}`);
     if (!res.ok) return null;
     const data = await res.json();
     return data;

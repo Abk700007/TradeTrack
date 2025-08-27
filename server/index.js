@@ -1,15 +1,17 @@
-// server/index.js (ESM version)
+// server/index.js (production-ready)
 import express from "express";
 import cors from "cors";
 import yahooFinance from "yahoo-finance2";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 app.use(cors());
 
-app.get("/stock/:symbol", async (req, res) => {
+app.get("/api/stock/:symbol", async (req, res) => {
   const { symbol } = req.params;
-  
-  // Only add .NS for stocks, not indices
+
+  // Add .NS for stocks, not indices
   const finalSymbol = symbol.startsWith("^") ? symbol.toUpperCase() : `${symbol}.NS`.toUpperCase();
   console.log("Fetching:", finalSymbol);
 
@@ -29,6 +31,19 @@ app.get("/stock/:symbol", async (req, res) => {
   }
 });
 
-app.listen(5000, () => {
-  console.log("✅ Backend running at http://localhost:5000");
+// ---------- Serve React frontend in production ----------
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve the React build
+app.use(express.static(path.join(__dirname, "../dist")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../dist", "index.html"));
+});
+
+// ---------- Start server ----------
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`✅ Backend running at http://localhost:${PORT}`);
 });
