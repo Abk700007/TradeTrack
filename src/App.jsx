@@ -215,7 +215,7 @@ function App() {
             </div>
 
             {/* Stat Cards */}
-            <div className="my-10 mx-40 grid grid-cols-2 sm:grid-cols-2 gap-5">
+            <div className="my-10 mx-4 sm:mx-40 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-5">
               <StatCard label="Wallet" value={`₹${wallet.toFixed(2)}`} Icon={Wallet} />
               <StatCard label="Invested" value={`₹${invested.toFixed(2)}`} Icon={TrendingUp} />
               <StatCard label="Current Value" value={`₹${currentValue.toFixed(2)}`} Icon={BarChart2} />
