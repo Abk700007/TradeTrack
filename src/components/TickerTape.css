@@ -1,0 +1,158 @@
+.ticker-tape-container {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Indices Bar */
+.market-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(7, 11, 20, 0.95);
+}
+
+.market-indices {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  flex: 1;
+}
+
+.index-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: 0.78rem;
+}
+
+.index-name {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.index-value {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.index-change.up { color: var(--brand-primary); }
+.index-change.down { color: var(--brand-danger); }
+
+.market-live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+  margin-left: 16px;
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--brand-primary);
+  border-radius: 50%;
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+/* Ticker Scroll */
+.ticker-container {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 6px 0;
+  height: 38px;
+}
+
+.ticker-label {
+  padding: 0 16px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  border-right: 1px solid var(--border-subtle);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.ticker-scroll-wrap {
+  flex: 1;
+  overflow: hidden;
+}
+
+.ticker-tape {
+  display: flex;
+  gap: 0;
+  animation: tickerMove 60s linear infinite;
+  width: max-content;
+}
+
+.ticker-tape:hover {
+  animation-play-state: paused;
+}
+
+@keyframes tickerMove {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.ticker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  border-right: 1px solid var(--border-subtle);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.ticker-symbol {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+.ticker-price {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.ticker-change {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 600;
+}
+
+.ticker-change.up { color: var(--brand-primary); }
+.ticker-change.down { color: var(--brand-danger); }
+
+@media (max-width: 768px) {
+  .market-status-bar {
+    padding: 6px 16px;
+  }
+
+  .market-indices {
+    gap: 16px;
+  }
+
+  .index-item {
+    font-size: 0.7rem;
+  }
+
+  .market-live-indicator {
+    display: none;
+  }
+}
