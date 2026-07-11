@@ -1,0 +1,135 @@
+.portfolio-page { display: flex; flex-direction: column; gap: 20px; animation: fadeIn 0.4s ease; }
+
+.portfolio-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.port-stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.port-stat-icon { font-size: 1.5rem; }
+.port-stat-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+.port-stat-value { font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; }
+
+.portfolio-charts-row { display: grid; grid-template-columns: 1fr 380px; gap: 16px; }
+
+.perf-chart-card { display: flex; flex-direction: column; gap: 12px; }
+
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+
+.chart-period-tabs { display: flex; gap: 4px; }
+
+.period-tab { padding: 4px 10px; border-radius: 6px; border: none; background: transparent; color: var(--text-muted); font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.period-tab:hover { background: var(--bg-elevated); color: var(--text-primary); }
+.period-tab.active { background: rgba(0,245,160,0.12); color: var(--brand-primary); }
+
+.allocation-card { display: flex; flex-direction: column; gap: 16px; }
+
+.allocation-content { display: flex; align-items: center; gap: 16px; }
+
+.alloc-legend { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+
+.alloc-item { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; }
+
+.alloc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+.alloc-name { flex: 1; color: var(--text-secondary); }
+
+.alloc-bar-wrap { display: flex; align-items: center; gap: 6px; }
+
+.alloc-bar { width: 60px; height: 4px; background: var(--bg-elevated); border-radius: 2px; overflow: hidden; }
+
+.alloc-fill { height: 100%; border-radius: 2px; }
+
+.alloc-pct { font-family: var(--font-mono); font-weight: 600; font-size: 0.75rem; color: var(--text-primary); width: 28px; }
+
+/* Holdings */
+.holdings-full-card { overflow: hidden; }
+
+.full-holdings-table { overflow-x: auto; }
+
+.fh-header, .fh-row {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr 0.5fr 1fr 1fr 1fr 1.2fr 1fr 0.8fr 1.1fr;
+  padding: 10px 16px;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.fh-header {
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.7rem;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
+
+.fh-row {
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: background var(--transition-fast);
+}
+
+.fh-symbol { font-weight: 700; font-size: 0.85rem; color: var(--text-primary); }
+
+.fh-cell { color: var(--text-secondary); }
+
+.fh-pnl, .fh-pct { font-weight: 700; font-size: 0.82rem; }
+.fh-pnl.up, .fh-pct.up { color: var(--brand-primary); }
+.fh-pnl.down, .fh-pct.down { color: var(--brand-danger); }
+
+/* Trade History */
+.th-table { overflow-x: auto; }
+
+.th-header, .th-row {
+  display: grid;
+  grid-template-columns: 1.2fr 0.7fr 0.5fr 1fr 0.8fr 1fr 0.8fr;
+  padding: 10px 16px;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.th-header {
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.7rem;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
+
+.th-row { border-bottom: 1px solid rgba(255,255,255,0.03); }
+
+.th-sym { font-weight: 700; font-size: 0.85rem; color: var(--text-primary); }
+.th-cell { color: var(--text-secondary); }
+
+.th-side { font-weight: 800; font-size: 0.8rem; letter-spacing: 0.05em; }
+.th-side.buy { color: var(--brand-primary); }
+.th-side.sell { color: var(--brand-danger); }
+
+.th-pnl { font-weight: 700; }
+.th-pnl.up { color: var(--brand-primary); }
+.th-pnl.down { color: var(--brand-danger); }
+
+.th-status { font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; display: inline-block; }
+.th-status.open { background: rgba(0,245,160,0.1); color: var(--brand-primary); border: 1px solid rgba(0,245,160,0.2); }
+.th-status.closed { background: rgba(100,116,139,0.1); color: #94a3b8; border: 1px solid rgba(100,116,139,0.2); }
+
+@media (max-width: 1200px) {
+  .portfolio-summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .portfolio-charts-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .portfolio-summary-grid { grid-template-columns: repeat(2, 1fr); }
+}
