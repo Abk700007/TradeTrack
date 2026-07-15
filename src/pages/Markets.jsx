@@ -54,20 +54,21 @@ export default function Markets() {
 
   // Fetch live prices and set initial stock selection
   useEffect(() => {
+    let isMounted = true;
     const fetchQuotes = async () => {
       try {
         const res = await axios.get('/api/markets/quotes');
+        if (!isMounted) return;
         setStocks(res.data.stocks);
         setMarketStatus(res.data.marketStatus);
-        if (loading) {
-          setSelectedStock(res.data.stocks[0]);
-          setLoading(false);
-        } else if (selectedStock) {
-          const updated = res.data.stocks.find(s => s.symbol === selectedStock.symbol);
-          if (updated) {
-            setSelectedStock(updated);
-          }
-        }
+        
+        setSelectedStock(prev => {
+          if (!prev) return res.data.stocks[0];
+          const updated = res.data.stocks.find(s => s.symbol === prev.symbol);
+          return updated || prev;
+        });
+
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching live quotes:', error);
       }
@@ -75,8 +76,11 @@ export default function Markets() {
 
     fetchQuotes();
     const interval = setInterval(fetchQuotes, 5000);
-    return () => clearInterval(interval);
-  }, [selectedStock, loading]);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   // Fetch historical data whenever selected stock changes
   useEffect(() => {

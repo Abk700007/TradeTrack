@@ -44,7 +44,7 @@ export default function LandingPage({ onLoginSuccess }) {
       const user = res.data.user;
       localStorage.setItem('tradetrack_secret_key', user.secretKey);
       setActiveModal(null);
-      if (onLoginSuccess) onLoginSuccess(user);
+      if (onLoginSuccess) onLoginSuccess(user.secretKey);
     } catch (err) {
       setErrorMsg(err.response?.data?.error || 'Invalid secret key.');
     } finally {
@@ -55,7 +55,7 @@ export default function LandingPage({ onLoginSuccess }) {
   const handleLaunchAppWithGeneratedKey = () => {
     localStorage.setItem('tradetrack_secret_key', generatedKey);
     setActiveModal(null);
-    if (onLoginSuccess) onLoginSuccess();
+    if (onLoginSuccess) onLoginSuccess(generatedKey);
   };
 
   const copyToClipboard = () => {
