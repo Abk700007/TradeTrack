@@ -23,26 +23,54 @@ export default function Trade() {
   const [searching, setSearching] = useState('');
   const [showSearch, setShowSearch] = useState(false);
 
+  // User Stats State
+  const [userStats, setUserStats] = useState({
+    xp: 0,
+    holdingsCount: 0,
+    totalPnL: 0,
+    pnlPercent: '0.00'
+  });
+
   const fetchUserDataAndQuotes = async () => {
     try {
-      const [userRes, quotesRes] = await Promise.all([
-        axios.get('/api/user'),
-        axios.get('/api/markets/quotes')
+      const [userRes, quotesRes, portRes] = await Promise.all([
+        axios.get('/api/user').catch(() => null),
+        axios.get('/api/markets/quotes'),
+        axios.get('/api/portfolio').catch(() => null)
       ]);
-      setUserBalance(userRes.data.balance);
-      setStocks(quotesRes.data.stocks);
-      
-      if (quotesRes.data.stocks.length > 0) {
-        if (!stock) {
-          setStock(quotesRes.data.stocks[0]);
-        } else {
-          // Keep current stock selected but update its live price
-          const updated = quotesRes.data.stocks.find(s => s.symbol === stock.symbol);
-          if (updated) {
-            setStock(updated);
-          }
-        }
+
+      if (userRes && userRes.data) {
+        setUserBalance(userRes.data.balance);
       }
+
+      setStocks(quotesRes.data.stocks);
+
+      setStock(prev => {
+        if (!prev && quotesRes.data.stocks.length > 0) {
+          return quotesRes.data.stocks[0];
+        }
+        if (prev) {
+          const updated = quotesRes.data.stocks.find(s => s.symbol === prev.symbol);
+          return updated || prev;
+        }
+        return null;
+      });
+
+      if (userRes?.data && portRes?.data) {
+        const holdings = portRes.data.holdings || [];
+        const totalValue = portRes.data.totalValue || 0;
+        const invested = portRes.data.totalInvested || 0;
+        const currentPnL = totalValue - invested;
+        const pnlPct = invested > 0 ? ((currentPnL / invested) * 100).toFixed(2) : '0.00';
+
+        setUserStats({
+          xp: userRes.data.xp || 0,
+          holdingsCount: holdings.length,
+          totalPnL: currentPnL,
+          pnlPercent: pnlPct
+        });
+      }
+
       setLoading(false);
     } catch (err) {
       console.error('Error fetching trade screen stats:', err);
@@ -50,10 +78,18 @@ export default function Trade() {
   };
 
   useEffect(() => {
-    fetchUserDataAndQuotes();
+    let isMounted = true;
+    const loadAll = async () => {
+      await fetchUserDataAndQuotes();
+    };
+
+    loadAll();
     const interval = setInterval(fetchUserDataAndQuotes, 5000);
-    return () => clearInterval(interval);
-  }, [stock]);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   // Handle stock change
   const selectStock = (s) => {
@@ -90,7 +126,13 @@ export default function Trade() {
         orderType
       });
 
-      setUserBalance(res.data.user.balance);
+      if (res.data && res.data.user) {
+        setUserBalance(res.data.user.balance);
+      }
+
+      // Refresh stats
+      fetchUserDataAndQuotes();
+
       setTimeout(() => setPlaced(null), 5000);
     } catch (err) {
       console.error('Error placing order:', err);
@@ -102,114 +144,108 @@ export default function Trade() {
 
   if (loading || !stock) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', color: 'var(--text-muted)' }}>
-        <div className="loading-spinner" style={{ fontSize: '1.25rem' }}>Loading Trade Terminal...</div>
+      <div className="trade-loading" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', color: 'var(--text-muted)' }}>
+        <div>Loading Trade Terminal...</div>
       </div>
     );
   }
 
   return (
     <div className="trade-page">
+      {/* Page Header */}
       <div className="page-header">
         <div>
           <h1 className="page-title">Trade <span className="text-gradient">Simulator</span></h1>
           <p className="page-sub">Practice trading with virtual money · Zero risk, real experience</p>
         </div>
-        <div className="virtual-balance-pill">
-          💰 Virtual Balance: <strong>₹{userBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
+
+        <div className="virtual-cash-badge">
+          <span className="vc-label">💰 Virtual Balance:</span>
+          <span className="vc-amount font-mono">₹{userBalance.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
         </div>
       </div>
 
       <div className="trade-layout">
-        {/* Order Panel */}
-        <div className="order-panel card">
-          <div className="order-panel-header">
-            <h2>Place Order</h2>
-            <span className="badge badge-primary">NSE · Virtual</span>
-          </div>
-
-          {/* Buy / Sell Toggle */}
-          <div className="side-toggle">
+        {/* Left Form */}
+        <div className="trade-form-panel card">
+          {/* Order Header: Buy / Sell toggle */}
+          <div className="trade-side-tabs">
             <button
-              id="buy-toggle-btn"
-              className={`side-btn ${side === 'BUY' ? 'active buy' : ''}`}
+              id="trade-buy-tab"
+              className={`side-tab buy ${side === 'BUY' ? 'active' : ''}`}
               onClick={() => setSide('BUY')}
             >
               <TrendingUp size={16} /> BUY
             </button>
             <button
-              id="sell-toggle-btn"
-              className={`side-btn ${side === 'SELL' ? 'active sell' : ''}`}
+              id="trade-sell-tab"
+              className={`side-tab sell ${side === 'SELL' ? 'active' : ''}`}
               onClick={() => setSide('SELL')}
             >
               <TrendingDown size={16} /> SELL
             </button>
           </div>
 
-          {/* Stock Selector */}
-          <div className="form-group">
-            <label className="form-label">Stock</label>
-            <div className="stock-selector" onClick={() => setShowSearch(!showSearch)} id="stock-selector-btn">
-              <div className="selected-stock-display">
-                <span className="ss-symbol">{stock.symbol}</span>
-                <span className="ss-price">₹{stock.price.toFixed(2)}</span>
-                <span className={`ss-change ${stock.changePercent >= 0 ? 'up' : 'down'}`}>
-                  {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%
-                </span>
+          {/* Stock Selector Dropdown */}
+          <div className="form-group relative">
+            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>STOCK</label>
+            <button
+              className="stock-select-trigger"
+              onClick={() => setShowSearch(!showSearch)}
+              id="stock-selector-dropdown-btn"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="font-mono font-bold" style={{ fontSize: '1rem' }}>{stock.symbol}</span>
+                <span className="text-muted" style={{ fontSize: '0.85rem' }}>₹{stock.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
-            </div>
-            <AnimatePresence>
-              {showSearch && (
-                <motion.div
-                  className="stock-dropdown"
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                >
-                  <input
-                    id="trade-stock-search"
-                    className="input"
-                    placeholder="Search stock..."
-                    value={searching}
-                    onChange={e => setSearching(e.target.value)}
-                    autoFocus
-                  />
-                  <div className="dropdown-list">
-                    {filteredStocks.slice(0, 8).map(s => (
-                      <div
-                        key={s.symbol}
-                        className="dropdown-item"
-                        id={`select-${s.symbol}-btn`}
-                        onClick={() => selectStock(s)}
-                      >
-                        <span className="dd-symbol">{s.symbol}</span>
-                        <span className="dd-name">{s.name}</span>
-                        <span className={`dd-change ${s.changePercent >= 0 ? 'up' : 'down'}`}>
-                          ₹{s.price.toFixed(2)} ({s.changePercent >= 0 ? '+' : ''}{s.changePercent.toFixed(2)}%)
-                        </span>
+              <span className={`stock-change ${stock.changePercent >= 0 ? 'up' : 'down'}`}>
+                {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%
+              </span>
+            </button>
+
+            {showSearch && (
+              <div className="stock-dropdown card">
+                <input
+                  type="text"
+                  className="input search-input"
+                  placeholder="Search stock symbol..."
+                  value={searching}
+                  onChange={e => setSearching(e.target.value)}
+                  autoFocus
+                  id="stock-search-field"
+                />
+                <div className="dropdown-list">
+                  {filteredStocks.map(s => (
+                    <div
+                      key={s.symbol}
+                      className="dropdown-item"
+                      onClick={() => selectStock(s)}
+                      id={`dropdown-stock-${s.symbol}`}
+                    >
+                      <div>
+                        <span className="dropdown-symbol">{s.symbol}</span>
+                        <span className="dropdown-name">{s.name}</span>
                       </div>
-                    ))}
-                    {filteredStocks.length === 0 && (
-                      <div style={{ padding: 12, textAlign: 'center', color: 'var(--text-muted)' }}>
-                        No stocks found
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                      <span className="font-mono" style={{ fontSize: '0.85rem' }}>
+                        ₹{s.price.toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Product Type */}
+          {/* Product Type (Intraday vs Delivery) */}
           <div className="form-group">
-            <label className="form-label">Product Type</label>
-            <div className="toggle-group">
+            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>PRODUCT TYPE</label>
+            <div className="radio-pills">
               {PRODUCT_TYPES.map(p => (
                 <button
                   key={p}
-                  id={`product-${p.toLowerCase()}-btn`}
-                  className={`toggle-opt ${productType === p ? 'active' : ''}`}
+                  className={`radio-pill ${productType === p ? 'active' : ''}`}
                   onClick={() => setProductType(p)}
+                  id={`product-type-${p.toLowerCase()}`}
                 >
                   {p}
                 </button>
@@ -219,16 +255,16 @@ export default function Trade() {
 
           {/* Order Type */}
           <div className="form-group">
-            <label className="form-label">Order Type</label>
-            <div className="toggle-group">
-              {ORDER_TYPES.map(o => (
+            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>ORDER TYPE</label>
+            <div className="radio-pills">
+              {ORDER_TYPES.map(t => (
                 <button
-                  key={o}
-                  id={`order-type-${o.replace(' ', '-').toLowerCase()}-btn`}
-                  className={`toggle-opt ${orderType === o ? 'active' : ''}`}
-                  onClick={() => setOrderType(o)}
+                  key={t}
+                  className={`radio-pill ${orderType === t ? 'active' : ''}`}
+                  onClick={() => setOrderType(t)}
+                  id={`order-type-${t.toLowerCase().replace(' ', '-')}`}
                 >
-                  {o}
+                  {t}
                 </button>
               ))}
             </div>
@@ -236,82 +272,58 @@ export default function Trade() {
 
           {/* Quantity */}
           <div className="form-group">
-            <label className="form-label">Quantity</label>
+            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>QUANTITY</label>
             <div className="qty-control">
-              <button className="qty-btn" onClick={() => setQty(Math.max(1, qty - 1))} id="qty-minus-btn">−</button>
+              <button className="qty-btn" onClick={() => setQty(Math.max(1, qty - 1))} id="qty-decrement-btn">−</button>
               <input
-                id="qty-input"
                 type="number"
                 className="input qty-input"
                 value={qty}
                 min={1}
                 onChange={e => setQty(Math.max(1, parseInt(e.target.value) || 1))}
+                id="qty-input-field"
               />
-              <button className="qty-btn" onClick={() => setQty(qty + 1)} id="qty-plus-btn">+</button>
+              <button className="qty-btn" onClick={() => setQty(qty + 1)} id="qty-increment-btn">+</button>
             </div>
           </div>
 
-          {orderType !== 'Market' && (
-            <div className="form-group">
-              <label className="form-label">
-                {orderType === 'Limit' ? 'Limit Price' : 'Stop Loss Price'}
-              </label>
-              <input
-                id="limit-price-input"
-                type="number"
-                className="input"
-                placeholder={`₹${stock.price.toFixed(2)}`}
-                value={limitPrice}
-                onChange={e => setLimitPrice(e.target.value)}
-              />
-            </div>
-          )}
-
-          {/* Order Summary */}
-          <div className="order-summary">
+          {/* Total & Margin Box */}
+          <div className="order-summary-box">
             <div className="summary-row">
-              <span>LTP</span>
-              <span className="font-mono">₹{stock.price.toFixed(2)}</span>
+              <span className="summary-label">Estimated Value:</span>
+              <span className="summary-val font-mono">₹{total.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
             </div>
             <div className="summary-row">
-              <span>Quantity</span>
-              <span className="font-mono">{qty} shares</span>
-            </div>
-            <div className="summary-row">
-              <span>Total Value</span>
-              <span className="font-mono">₹{total.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-            </div>
-            <div className="summary-row highlight">
-              <span>Required Margin</span>
-              <span className="font-mono">₹{margin.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+              <span className="summary-label">Margin Required ({productType === 'Intraday' ? '5x Leverage' : '1x Delivery'}):</span>
+              <span className="summary-val font-mono" style={{ color: 'var(--brand-primary)' }}>
+                ₹{margin.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              </span>
             </div>
           </div>
 
-          {/* Place Order Button */}
-          <motion.button
-            id="place-order-btn"
-            className={`btn btn-lg w-full ${side === 'BUY' ? 'btn-primary' : 'btn-danger'}`}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
+          {/* Submit Button */}
+          <button
+            className={`btn ${side === 'BUY' ? 'btn-primary' : 'btn-danger'} w-full btn-lg`}
             onClick={placeOrder}
+            id="execute-trade-order-btn"
           >
-            {side === 'BUY' ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
-            Place {side} Order · {stock.symbol}
-          </motion.button>
+            {side} {stock.symbol} ({qty} Shares)
+          </button>
 
-          {/* Messages Alerts (Confirmation Toasts) */}
+          {/* Confirmation Banners */}
           <AnimatePresence>
             {placed && (
               <motion.div
-                className="order-confirm"
+                className="order-confirm success"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
+                style={{ backgroundColor: 'rgba(0, 245, 160, 0.12)', border: '1px solid var(--brand-primary)', color: 'var(--brand-primary)', display: 'flex', alignItems: 'center', gap: 12 }}
               >
                 <CheckCircle size={18} color="var(--brand-primary)" />
                 <div>
-                  <strong>Order Placed!</strong>
-                  <span>{placed.side} {placed.qty} × {placed.symbol} @ ₹{placed.price.toFixed(2)}</span>
+                  <strong>Order Executed!</strong>
+                  <span>Placed {placed.side} order for {placed.qty} x {placed.symbol} at ₹{placed.price.toFixed(2)}</span>
                 </div>
               </motion.div>
             )}
@@ -383,15 +395,15 @@ export default function Trade() {
             </div>
           </div>
 
-          {/* Quick Stats */}
+          {/* Quick Stats - 100% Dynamic from User Account & Portfolio */}
           <div className="card trade-quick-stats">
-            <h3 style={{ marginBottom: 16, fontSize: '0.95rem' }}>Today's P&L</h3>
+            <h3 style={{ marginBottom: 16, fontSize: '0.95rem' }}>Portfolio Overview</h3>
             <div className="quick-stats-grid">
               {[
-                { label: 'Trades Today', value: '4', icon: '⚡' },
-                { label: 'Winning Trades', value: '3', icon: '✅' },
-                { label: 'Today P&L', value: '+₹4,230', icon: '📈', isUp: true },
-                { label: 'XP Earned Today', value: '+180 XP', icon: '⭐' },
+                { label: 'Holdings Count', value: `${userStats.holdingsCount} Positions`, icon: '⚡' },
+                { label: 'Total P&L', value: `${userStats.totalPnL >= 0 ? '+' : ''}₹${Math.abs(userStats.totalPnL).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`, icon: '📈', isUp: userStats.totalPnL >= 0 },
+                { label: 'Return %', value: `${userStats.pnlPercent}%`, icon: '✅', isUp: parseFloat(userStats.pnlPercent) >= 0 },
+                { label: 'Account XP', value: `+${userStats.xp} XP`, icon: '⭐' },
               ].map(s => (
                 <div key={s.label} className="quick-stat-item">
                   <span className="qs-icon">{s.icon}</span>

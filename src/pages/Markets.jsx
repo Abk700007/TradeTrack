@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   LineChart, Line, AreaChart, Area, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { TrendingUp, TrendingDown, Search, Filter, Star, ChevronRight, Activity } from 'lucide-react';
+import { TrendingUp, TrendingDown, Search, Star, ChevronRight, Activity, X, ShieldCheck } from 'lucide-react';
 import { NIFTY_STOCKS, generateChartData } from '../data/marketData';
+import axios from 'axios';
 import './Markets.css';
 
 const SECTORS = ['All', 'IT', 'Finance', 'Energy', 'FMCG', 'Auto', 'Consumer'];
-
-import axios from 'axios';
 
 export default function Markets() {
   const [stocks, setStocks] = useState([]);
@@ -22,49 +21,37 @@ export default function Markets() {
   const [chartData, setChartData] = useState([]);
   const [chartLoading, setChartLoading] = useState(false);
   const [marketStatus, setMarketStatus] = useState(null);
-  const [quickQty, setQuickQty] = useState(1);
-  const [tradeToast, setTradeToast] = useState(null);
-  const [quickOrderLoading, setQuickOrderLoading] = useState(false);
 
-  const handleQuickOrder = async (side) => {
-    if (!selectedStock || quickQty <= 0) return;
-    setQuickOrderLoading(true);
-    setTradeToast(null);
-    try {
-      await axios.post('/api/trade', {
-        symbol: selectedStock.symbol,
-        side,
-        qty: quickQty,
-        productType: 'Delivery'
-      });
-      setTradeToast({
-        type: 'success',
-        text: `Successfully ${side === 'BUY' ? 'bought' : 'sold'} ${quickQty} share(s) of ${selectedStock.symbol}!`
-      });
-      setTimeout(() => setTradeToast(null), 5000);
-    } catch (err) {
-      console.error('Error placing quick order:', err);
-      const errMsg = err.response?.data?.error || 'Failed to execute trade';
-      setTradeToast({ type: 'error', text: errMsg });
-      setTimeout(() => setTradeToast(null), 5000);
-    } finally {
-      setQuickOrderLoading(false);
-    }
-  };
+  // Trade Modal & User Balance State
+  const [userBalance, setUserBalance] = useState(1000000);
+  const [tradeModal, setTradeModal] = useState(null); // { side: 'BUY'|'SELL', stock: object } | null
+  const [modalQty, setModalQty] = useState(1);
+  const [tradeProductType, setTradeProductType] = useState('Delivery');
+  const [modalLoading, setModalLoading] = useState(false);
+  const [modalError, setModalError] = useState('');
+  const [tradeToast, setTradeToast] = useState(null);
 
   // Fetch live prices and set initial stock selection
   useEffect(() => {
     let isMounted = true;
     const fetchQuotes = async () => {
       try {
-        const res = await axios.get('/api/markets/quotes');
+        const [quotesRes, userRes] = await Promise.all([
+          axios.get('/api/markets/quotes'),
+          axios.get('/api/user').catch(() => null)
+        ]);
+
         if (!isMounted) return;
-        setStocks(res.data.stocks);
-        setMarketStatus(res.data.marketStatus);
+        setStocks(quotesRes.data.stocks);
+        setMarketStatus(quotesRes.data.marketStatus);
+
+        if (userRes && userRes.data) {
+          setUserBalance(userRes.data.balance);
+        }
         
         setSelectedStock(prev => {
-          if (!prev) return res.data.stocks[0];
-          const updated = res.data.stocks.find(s => s.symbol === prev.symbol);
+          if (!prev) return quotesRes.data.stocks[0];
+          const updated = quotesRes.data.stocks.find(s => s.symbol === prev.symbol);
           return updated || prev;
         });
 
@@ -118,6 +105,46 @@ export default function Markets() {
     setSelectedStock(stock);
   };
 
+  const openTradeModal = (side, stockToTrade) => {
+    setTradeModal({ side, stock: stockToTrade || selectedStock });
+    setModalQty(1);
+    setTradeProductType('Delivery');
+    setModalError('');
+  };
+
+  const handleExecuteModalOrder = async () => {
+    if (!tradeModal || !tradeModal.stock || modalQty <= 0) return;
+    setModalLoading(true);
+    setModalError('');
+    setTradeToast(null);
+
+    try {
+      const res = await axios.post('/api/trade', {
+        symbol: tradeModal.stock.symbol,
+        side: tradeModal.side,
+        qty: modalQty,
+        productType: tradeProductType
+      });
+
+      if (res.data && res.data.user) {
+        setUserBalance(res.data.user.balance);
+      }
+
+      setTradeToast({
+        type: 'success',
+        text: `Successfully ${tradeModal.side === 'BUY' ? 'bought' : 'sold'} ${modalQty} share(s) of ${tradeModal.stock.symbol}!`
+      });
+      setTradeModal(null);
+      setTimeout(() => setTradeToast(null), 5000);
+    } catch (err) {
+      console.error('Error executing trade:', err);
+      const errMsg = err.response?.data?.error || 'Failed to execute order. Please check balance or holdings.';
+      setModalError(errMsg);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', color: 'var(--text-muted)' }}>
@@ -128,15 +155,19 @@ export default function Markets() {
 
   return (
     <div className="markets-page">
+      {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">Markets <span className="text-gradient">Live</span></h1>
-          <p className="page-sub">NSE/BSE real-time simulation · Updated every 2.5s</p>
+          <h1 className="page-title">Live <span className="text-gradient">Markets</span></h1>
+          <p className="page-sub">Explore NSE stocks, analyze charts, and place virtual orders</p>
         </div>
-        <div className="market-open-badge" style={{ borderColor: marketStatus?.isOpen ? 'var(--brand-primary)' : 'var(--brand-danger)', color: marketStatus?.isOpen ? 'var(--brand-primary)' : 'var(--brand-danger)' }}>
-          <Activity size={14} />
-          <span className="live-dot" style={{ background: marketStatus?.isOpen ? 'var(--brand-primary)' : 'var(--brand-danger)' }} />
-          {marketStatus?.statusText || 'NSE LIVE'}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {marketStatus && (
+            <span className={`badge ${marketStatus.isOpen ? 'badge-primary' : 'badge-accent'}`}>
+              <Activity size={12} style={{ marginRight: 4 }} />
+              {marketStatus.isOpen ? 'NSE LIVE' : 'MARKET CLOSED'}
+            </span>
+          )}
         </div>
       </div>
 
@@ -218,54 +249,36 @@ export default function Markets() {
         {/* Chart + Detail Panel */}
         {selectedStock && (
           <motion.div
-            className="stock-detail-panel"
             key={selectedStock.symbol}
+            className="stock-detail-panel"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="card stock-header-card">
-              <div className="stock-detail-header">
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-                    <h2 className="stock-detail-symbol">{selectedStock.symbol}</h2>
-                    <span className="badge badge-primary">{selectedStock.sector}</span>
-                  </div>
-                  <p className="stock-detail-name">{selectedStock.name}</p>
+            {/* Header info */}
+            <div className="detail-header card">
+              <div>
+                <div className="detail-symbol-row">
+                  <h2 className="font-mono">{selectedStock.symbol}</h2>
+                  <span className="stock-sector-badge">{selectedStock.sector}</span>
                 </div>
-                <div className="stock-detail-price-block">
-                  <span className="stock-detail-price">
-                    ₹{selectedStock.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </span>
-                  <span className={`stock-detail-change ${selectedStock.changePercent >= 0 ? 'up' : 'down'}`}>
-                    {selectedStock.changePercent >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-                    {selectedStock.changePercent >= 0 ? '+' : ''}{selectedStock.changePercent.toFixed(2)}%
-                    ({selectedStock.change >= 0 ? '+' : ''}₹{selectedStock.change.toFixed(2)})
-                  </span>
-                </div>
+                <p className="detail-name">{selectedStock.name}</p>
               </div>
 
-              <div className="stock-meta-row">
-                {[
-                  { label: 'Volume', value: selectedStock.volume },
-                  { label: 'Market Cap', value: selectedStock.marketCap },
-                  { label: '52W High', value: `₹${(selectedStock.price * 1.32).toFixed(0)}` },
-                  { label: '52W Low', value: `₹${(selectedStock.price * 0.72).toFixed(0)}` },
-                  { label: 'P/E Ratio', value: '24.3' },
-                  { label: 'Sector', value: selectedStock.sector },
-                ].map(m => (
-                  <div key={m.label} className="stock-meta-item">
-                    <span className="meta-label">{m.label}</span>
-                    <span className="meta-value">{m.value}</span>
-                  </div>
-                ))}
+              <div className="detail-price-wrap">
+                <span className="detail-price font-mono">
+                  ₹{selectedStock.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </span>
+                <span className={`detail-change ${selectedStock.changePercent >= 0 ? 'up' : 'down'}`}>
+                  {selectedStock.changePercent >= 0 ? '▲' : '▼'} {Math.abs(selectedStock.changePercent).toFixed(2)}%
+                </span>
               </div>
             </div>
 
-            {/* Chart */}
-            <div className="card chart-panel">
-              <div className="card-header">
-                <h3>Price Chart</h3>
+            {/* Price Chart */}
+            <div className="chart-card card">
+              <div className="chart-header">
+                <h3>Price History (30 Days)</h3>
                 <div className="chart-period-tabs">
                   {['1D', '1W', '1M', '3M'].map(p => (
                     <button key={p} className={`period-tab ${p === '1M' ? 'active' : ''}`}>{p}</button>
@@ -305,40 +318,26 @@ export default function Markets() {
               </ResponsiveContainer>
             </div>
 
-            {/* Trade Action */}
+            {/* Trade Action Card with BUY and SELL Modal Trigger Buttons */}
             <div className="trade-action-card card">
-              <div className="trade-action-header">
-                <h3>Quick Trade</h3>
-                <span className="badge badge-primary">Virtual</span>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Quantity:</label>
-                <div className="qty-control" style={{ maxWidth: 130 }}>
-                  <button className="qty-btn" onClick={() => setQuickQty(Math.max(1, quickQty - 1))}>−</button>
-                  <input
-                    type="number"
-                    className="input qty-input"
-                    value={quickQty}
-                    min={1}
-                    onChange={e => setQuickQty(Math.max(1, parseInt(e.target.value) || 1))}
-                    style={{ textAlign: 'center', padding: '4px' }}
-                  />
-                  <button className="qty-btn" onClick={() => setQuickQty(quickQty + 1)}>+</button>
+              <div className="trade-action-header" style={{ marginBottom: 14 }}>
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Execute Order</h3>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    Virtual Balance: <strong style={{ color: 'var(--brand-primary)' }}>₹{userBalance.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</strong>
+                  </span>
                 </div>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                  Total: ₹{(selectedStock.price * quickQty).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                </span>
+                <span className="badge badge-primary">Virtual Trading</span>
               </div>
 
-              <div className="trade-action-btns">
+              <div className="trade-action-btns" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <motion.button
                   className="btn btn-primary trade-buy-btn"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  disabled={quickOrderLoading}
-                  onClick={() => handleQuickOrder('BUY')}
+                  onClick={() => openTradeModal('BUY', selectedStock)}
                   id={`buy-${selectedStock.symbol}-btn`}
+                  style={{ padding: '12px', fontSize: '1rem' }}
                 >
                   <TrendingUp size={18} />
                   BUY {selectedStock.symbol}
@@ -347,9 +346,9 @@ export default function Markets() {
                   className="btn btn-danger trade-sell-btn"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  disabled={quickOrderLoading}
-                  onClick={() => handleQuickOrder('SELL')}
+                  onClick={() => openTradeModal('SELL', selectedStock)}
                   id={`sell-${selectedStock.symbol}-btn`}
+                  style={{ padding: '12px', fontSize: '1rem' }}
                 >
                   <TrendingDown size={18} />
                   SELL {selectedStock.symbol}
@@ -376,6 +375,127 @@ export default function Markets() {
           </motion.div>
         )}
       </div>
+
+      {/* Interactive Trade Execution Modal */}
+      <AnimatePresence>
+        {tradeModal?.open && tradeModal?.stock && (
+          <motion.div
+            className="modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setTradeModal(null)}
+            style={{ zIndex: 1200 }}
+          >
+            <motion.div
+              className="modal-card"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              style={{ maxWidth: 460 }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  Place Order: <span className="font-mono" style={{ color: 'var(--brand-primary)' }}>{tradeModal.stock.symbol}</span>
+                </h2>
+                <button className="btn btn-ghost btn-icon" onClick={() => setTradeModal(null)}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Side Selector Tabs */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, background: 'rgba(255,255,255,0.04)', padding: 4, borderRadius: 10, marginBottom: 20 }}>
+                <button
+                  type="button"
+                  className={`btn ${tradeModal.side === 'BUY' ? 'btn-primary' : 'btn-ghost'}`}
+                  onClick={() => setTradeModal({ ...tradeModal, side: 'BUY' })}
+                >
+                  <TrendingUp size={16} /> BUY
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${tradeModal.side === 'SELL' ? 'btn-danger' : 'btn-ghost'}`}
+                  onClick={() => setTradeModal({ ...tradeModal, side: 'SELL' })}
+                >
+                  <TrendingDown size={16} /> SELL
+                </button>
+              </div>
+
+              {/* Order Inputs */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>Product Type</label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {['Delivery', 'Intraday'].map(type => (
+                      <button
+                        key={type}
+                        type="button"
+                        className={`btn ${tradeProductType === type ? 'btn-secondary active' : 'btn-ghost'}`}
+                        style={{ flex: 1, borderColor: tradeProductType === type ? 'var(--brand-primary)' : 'var(--border-color)' }}
+                        onClick={() => setTradeProductType(type)}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>Quantity (Shares)</label>
+                  <div className="qty-control" style={{ width: '100%' }}>
+                    <button type="button" className="qty-btn" onClick={() => setModalQty(Math.max(1, modalQty - 1))}>−</button>
+                    <input
+                      type="number"
+                      className="input qty-input"
+                      value={modalQty}
+                      min={1}
+                      onChange={e => setModalQty(Math.max(1, parseInt(e.target.value) || 1))}
+                      style={{ textAlign: 'center', width: '100%' }}
+                    />
+                    <button type="button" className="qty-btn" onClick={() => setModalQty(modalQty + 1)}>+</button>
+                  </div>
+                </div>
+
+                {/* Summary Box */}
+                <div style={{ background: 'rgba(0,0,0,0.3)', padding: 14, borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.85rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
+                    <span>Market Price:</span>
+                    <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>₹{tradeModal.stock.price.toFixed(2)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
+                    <span>Estimated Total:</span>
+                    <span style={{ color: 'var(--brand-primary)', fontWeight: 700, fontFamily: 'monospace' }}>
+                      ₹{(tradeModal.stock.price * modalQty).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', borderTop: '1px solid var(--border-color)', paddingTop: 8 }}>
+                    <span>Available Cash:</span>
+                    <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>
+                      ₹{userBalance.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                    </span>
+                  </div>
+                </div>
+
+                {modalError && (
+                  <div style={{ padding: '10px', borderRadius: 8, background: 'rgba(255, 77, 109, 0.1)', border: '1px solid var(--brand-danger)', color: 'var(--brand-danger)', fontSize: '0.8rem' }}>
+                    {modalError}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className={`btn ${tradeModal.side === 'BUY' ? 'btn-primary' : 'btn-danger'} w-full btn-lg`}
+                  onClick={handleExecuteModalOrder}
+                  disabled={modalLoading}
+                >
+                  {modalLoading ? 'Executing Order...' : `Confirm ${tradeModal.side} Order`}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
