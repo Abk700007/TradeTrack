@@ -14,6 +14,8 @@ import Leaderboard from './pages/Leaderboard';
 import Battles from './pages/Battles';
 import Learn from './pages/Learn';
 
+import './App.css';
+
 export default function App() {
   const [secretKey, setSecretKey] = useState(() => localStorage.getItem('tradetrack_secret_key') || '');
 
@@ -43,11 +45,11 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="app-layout" style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary, #0a0e17)' }}>
+      <div className="app-container">
         <Sidebar onLogout={handleLogout} />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <div className="main-wrapper">
           <TickerTape />
-          <main style={{ flex: 1, padding: '24px 28px', overflowY: 'auto' }}>
+          <main className="main-content">
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/markets" element={<Markets />} />
