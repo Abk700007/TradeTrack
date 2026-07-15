@@ -27,7 +27,7 @@ export default function Sidebar({ onLogout }) {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [user, setUser] = useState({
     name: 'Investor',
-    username: '@trader',
+    username: 'trader',
     balance: 1000000,
     xp: 0,
     streak: 1,
@@ -111,7 +111,7 @@ export default function Sidebar({ onLogout }) {
             animate={{ opacity: 1 }}
           >
             <span className="user-name">{user.name}</span>
-            <span className="user-username">@{user.username}</span>
+            <span className="user-username">{user.username ? (user.username.startsWith('@') ? user.username : `@${user.username}`) : '@trader'}</span>
             <div className={`rank-badge ${rank.cssClass}`} style={{ fontSize: '0.65rem', padding: '2px 8px', marginTop: 4 }}>
               {rank.icon} {rank.name}
             </div>

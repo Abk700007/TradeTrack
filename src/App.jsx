@@ -16,8 +16,14 @@ import Learn from './pages/Learn';
 
 import './App.css';
 
+// Synchronously configure default x-secret-key header from localStorage if present
+const initialSecretKey = localStorage.getItem('tradetrack_secret_key') || '';
+if (initialSecretKey) {
+  axios.defaults.headers.common['x-secret-key'] = initialSecretKey;
+}
+
 export default function App() {
-  const [secretKey, setSecretKey] = useState(() => localStorage.getItem('tradetrack_secret_key') || '');
+  const [secretKey, setSecretKey] = useState(initialSecretKey);
 
   useEffect(() => {
     if (secretKey) {
