@@ -1,0 +1,112 @@
+.battles-page { display: flex; flex-direction: column; gap: 20px; animation: fadeIn 0.4s ease; }
+
+.battles-tabs { display: flex; gap: 8px; }
+
+.lb-tab { padding: 8px 20px; border-radius: var(--radius-full); border: 1px solid var(--border-subtle); background: transparent; color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all var(--transition-fast); }
+.lb-tab:hover { border-color: var(--border-default); color: var(--text-primary); }
+.lb-tab.active { background: rgba(0,245,160,0.1); border-color: rgba(0,245,160,0.3); color: var(--brand-primary); }
+
+.battles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+
+.battle-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid var(--border-subtle) !important;
+  transition: all var(--transition-base);
+}
+
+.battle-card.winning { border-color: rgba(0,245,160,0.2) !important; }
+.battle-card.losing { border-color: rgba(255,77,109,0.2) !important; }
+
+.battle-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.battle-status-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+
+.battle-status-badge.winning { background: rgba(0,245,160,0.1); color: var(--brand-primary); border: 1px solid rgba(0,245,160,0.25); }
+.battle-status-badge.losing { background: rgba(255,77,109,0.1); color: var(--brand-danger); border: 1px solid rgba(255,77,109,0.25); }
+
+.battle-time { display: flex; align-items: center; gap: 5px; font-size: 0.78rem; color: var(--text-muted); }
+
+.battle-vs-row { display: flex; align-items: center; gap: 16px; }
+
+.battle-player { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.battle-player.opp { align-items: flex-end; }
+
+.bp-avatar { font-size: 2rem; }
+.bp-name { font-size: 0.82rem; font-weight: 600; }
+.bp-return { font-size: 1rem; font-weight: 800; font-family: var(--font-mono); }
+.bp-return.up { color: var(--brand-primary); }
+.bp-return.down { color: var(--brand-danger); }
+
+.vs-divider { font-family: var(--font-display); font-size: 1rem; font-weight: 900; color: var(--text-muted); padding: 0 4px; }
+
+.battle-progress-bar { height: 6px; background: rgba(255,77,109,0.2); border-radius: 3px; overflow: hidden; }
+.battle-progress-fill { height: 100%; background: var(--grad-primary); border-radius: 3px; transition: width 1s; }
+
+.battle-meta { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); }
+
+.new-battle-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  min-height: 200px;
+  border: 2px dashed var(--border-default) !important;
+  background: transparent !important;
+  cursor: pointer;
+}
+
+.new-battle-card h3 { font-size: 1rem; }
+.new-battle-card p { font-size: 0.82rem; color: var(--text-muted); }
+
+/* Tournaments */
+.tournaments-list { display: flex; flex-direction: column; gap: 12px; }
+
+.tournament-card { display: flex; align-items: center; gap: 16px; }
+
+.tournament-icon { font-size: 2.5rem; }
+
+.tournament-info { flex: 1; }
+
+.tournament-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.tournament-header h3 { font-size: 1rem; }
+
+.tournament-meta { display: flex; gap: 16px; font-size: 0.78rem; color: var(--text-muted); }
+.tournament-meta span { display: flex; align-items: center; gap: 4px; }
+
+.tournament-my-rank { margin-top: 8px; font-size: 0.8rem; color: var(--text-secondary); }
+.tournament-my-rank strong { color: var(--brand-primary); }
+
+.t-rank-bar { height: 4px; background: var(--bg-elevated); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+.t-rank-fill { height: 100%; background: var(--grad-primary); border-radius: 2px; }
+
+/* Find Opponents */
+.find-opponents-card { display: flex; flex-direction: column; }
+
+.opponent-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.opponents-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+
+.opponent-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 20px 16px; text-align: center; }
+
+.opp-avatar { font-size: 2.5rem; }
+.opp-name { font-weight: 700; font-size: 0.9rem; }
+.opp-returns { font-weight: 700; font-size: 0.9rem; }
+.opp-returns.up { color: var(--brand-primary); }
+
+@media (max-width: 768px) {
+  .battles-grid { grid-template-columns: 1fr; }
+  .tournament-card { flex-direction: column; align-items: flex-start; }
+}
